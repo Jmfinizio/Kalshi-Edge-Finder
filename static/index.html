@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalshi vs Sportsbook · Edge Finder</title>
+<style>
+:root{--bg:#0e1116;--panel:#161b22;--panel2:#1c232c;--line:#2a323d;--text:#e6edf3;--muted:#8b98a6;--green:#3fb950;--red:#f85149;--amber:#d29922;--blue:#58a6ff;--accent:#2f81f7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
+h1{font-size:16px;margin:0;font-weight:650}
+.badge{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em}
+.badge.demo{background:#5a3b00;color:#ffcf6b}.badge.live{background:#0f3d1d;color:#7ee787}
+.stat{color:var(--muted);font-size:12px}.stat b{color:var(--text);font-weight:600}.stat.warn b{color:var(--amber)}.stat.bad b{color:var(--red)}
+.spacer{flex:1}
+button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px 11px;font-size:12px;cursor:pointer}
+button:hover{border-color:var(--accent)}button.primary{background:var(--accent);border-color:var(--accent);color:#fff}button.danger:hover{border-color:var(--red);color:var(--red)}
+button:disabled{opacity:.5;cursor:default}
+#banner{display:none;padding:9px 20px;background:#3b2a00;color:#ffd98a;border-bottom:1px solid #6b4a00;font-size:13px}
+nav{display:flex;gap:2px;padding:0 20px;border-bottom:1px solid var(--line);background:var(--bg);overflow-x:auto}
+nav button{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;padding:11px 14px;color:var(--muted);font-size:13px}
+nav button.active{color:var(--text);border-bottom-color:var(--accent)}
+main{padding:18px 20px;max-width:1500px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.explain{color:var(--muted);font-size:12.5px;margin:0 0 12px}.explain b{color:var(--text)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}.kpi .l{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}.kpi .v{font-size:22px;font-weight:650;margin-top:2px}.kpi .s{color:var(--muted);font-size:11px}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{position:sticky;top:0;background:var(--panel2);text-align:left;padding:8px 10px;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;cursor:pointer;user-select:none}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+td{padding:8px 10px;border-top:1px solid var(--line);white-space:nowrap}
+tr.row:hover{background:var(--panel2);cursor:pointer}
+.pos{color:var(--green)}.neg{color:var(--red)}.muted{color:var(--muted)}
+.tag{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:4px;background:#2b3340;color:#b6c2cf;margin-right:3px}
+.tag.warn{background:#4a3700;color:#ffd98a}.tag.block{background:#4a1d1d;color:#ffb3b0}.tag.side-yes{background:#0f3d1d;color:#7ee787}.tag.side-no{background:#3a1c4a;color:#e0b3ff}
+.empty{padding:34px;text-align:center;color:var(--muted)}
+.toolbar{display:flex;gap:14px;align-items:center;margin-bottom:10px;flex-wrap:wrap}.toolbar label{color:var(--muted);font-size:12px;display:flex;gap:6px;align-items:center}
+input,select{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:12.5px}input[type=number]{width:84px}
+#drawer{position:fixed;top:0;right:-460px;width:440px;max-width:100vw;height:100vh;background:var(--panel);border-left:1px solid var(--line);padding:18px;overflow-y:auto;transition:right .18s;z-index:20;box-shadow:-8px 0 24px rgba(0,0,0,.4)}
+#drawer.open{right:0}
+#drawer h2{font-size:15px;margin:0 0 2px}.kv{display:grid;grid-template-columns:1fr auto;gap:5px 12px;font-size:13px;margin:12px 0}.kv span:nth-child(odd){color:var(--muted)}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 22px}.settings-grid label{display:flex;flex-direction:column;gap:4px;color:var(--muted);font-size:12px}.settings-grid label small{font-size:11px;color:#6b7785}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#0f3d1d;color:#d3ffdc;padding:9px 16px;border-radius:8px;display:none;z-index:50;font-size:13px}
+#toast.err{background:#4a1d1d;color:#ffd0ce}
+svg.spark{width:100%;height:110px;background:var(--bg);border:1px solid var(--line);border-radius:8px}
+.chips{display:flex;gap:8px;padding:10px 20px 0;flex-wrap:wrap}.chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--muted);cursor:pointer}.chip b{color:var(--text)}.chip.active{border-color:var(--accent);color:var(--text);background:#16263f}.chip .n{color:var(--green);font-weight:700;margin-left:4px}
+.dot-live{display:none;width:8px;height:8px;border-radius:50%;background:var(--red);margin-left:6px;vertical-align:middle;animation:pulse 1.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(248,81,73,.7)}70%{box-shadow:0 0 0 7px rgba(248,81,73,0)}100%{box-shadow:0 0 0 0 rgba(248,81,73,0)}}
+tr.flash td{animation:flash 1.6s ease-out}@keyframes flash{0%{background:#14532d}100%{background:transparent}}
+.livebar{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.livebar .big{font-size:15px;font-weight:650}
+.switch{padding:8px 16px;font-size:13px;font-weight:700;border-radius:8px}.switch.on{background:#7f1d1d;border-color:#f85149;color:#fff}
+.warnbox{background:#3b2a00;border:1px solid #6b4a00;color:#ffd98a;border-radius:8px;padding:9px 12px;font-size:12.5px;margin:10px 0}
+.badbox{background:#3a1414;border:1px solid #7f1d1d;color:#ffb3b0;border-radius:8px;padding:9px 12px;font-size:12.5px;margin:10px 0}
+.legend{font-size:11px;color:var(--muted);display:flex;gap:12px;margin-top:4px}.dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Kalshi vs Sportsbook</h1>
+  <span id="mode" class="badge demo">…</span>
+  <span class="stat" id="stKalshi">Kalshi: <b>–</b></span>
+  <span class="stat" id="stBook">Books: <b>–</b></span>
+  <span class="stat" id="stCredits">Odds API credits: <b>–</b></span>
+  <span class="stat" id="stCounts"></span>
+  <span class="spacer"></span>
+  <button id="btnKalshi">↻ Kalshi</button>
+  <button id="btnBook" title="Spends Odds API credits">↻ Sportsbooks (uses credits)</button>
+</header>
+<div id="banner"></div>
+<nav id="tabs">
+  <button data-tab="opps" class="active">Opportunities</button>
+  <button data-tab="live">Live<span class="dot-live" id="liveDot"></span></button>
+  <button data-tab="board">Gap board</button>
+  <button data-tab="paper">Paper trades</button>
+  <button data-tab="perf">Performance</button>
+  <button data-tab="diag">Diagnostics</button>
+  <button data-tab="settings">Settings</button>
+</nav>
+<div class="chips" id="sportbar"></div>
+<main>
+  <section id="tab-opps">
+    <p class="explain">Sportsbooks are treated as the <b>true price</b> (margin removed). An opportunity is a Kalshi contract that is cheaper than that fair price <b>after Kalshi's fee</b>:
+      <b>net edge = book fair probability − price you pay − fee</b>. Buy the side the books favor. Nothing here places orders: use <b>Paper bet</b> to track it.</p>
+    <p class="explain"><b>Price</b> = the cheapest ask, before fees. <b>All-in</b> = price + Kalshi's fee per contract, which is what the order ticket really totals to.
+      <b>Size @ price</b> = how many contracts are offered at that price (we assume you buy up to 100). Past that size the next cents cost more: click a row and use <b>Live order cost</b>.</p>
+    <div class="toolbar">
+      <label>Min net edge (¢) <input id="fMinEdge" type="number" step="0.5" value="2"></label>
+      <label>Type <select id="fKind"><option value="">All</option><option>ML</option><option>SP</option><option>TOT</option></select></label>
+      <label><input id="fApprox" type="checkbox" checked> include approximate lines</label>
+      <span class="muted" id="oppCount"></span>
+    </div>
+    <div class="table-wrap"><table id="tblOpps"></table></div>
+  </section>
+
+  <section id="tab-live" hidden>
+    <div class="card" id="liveCtl"></div>
+    <div id="liveMsg"></div>
+    <div class="table-wrap"><table id="tblLive"></table></div>
+  </section>
+
+  <section id="tab-board" hidden>
+    <p class="explain">Every Kalshi market we could match to a sportsbook game, sorted by the <b>raw gap</b> between book fair probability and Kalshi's midpoint. A big gap here is <b>not</b> necessarily a trade:
+      check spread, size, fees and book age in the flags column.</p>
+    <div class="table-wrap"><table id="tblBoard"></table></div>
+  </section>
+
+  <section id="tab-paper" hidden>
+    <div class="toolbar"><button id="btnSettle">Settle finished games</button><button id="btnDemoFinish" style="display:none">⏩ Demo: finish all games</button></div>
+    <div class="table-wrap"><table id="tblTrades"></table></div>
+  </section>
+
+  <section id="tab-perf" hidden>
+    <div class="toolbar"><label>Show <select id="perfMode"><option value="all">All trades</option><option value="pre">Pregame only</option><option value="live">Live only</option></select></label>
+      <span class="muted" style="font-size:12px">Live and pregame are separate regimes: judge them separately.</span></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="card"><p class="explain" id="convExplain"></p><div class="table-wrap"><table id="tblConv"></table></div></div>
+  </section>
+
+  <section id="tab-diag" hidden>
+    <div class="card"><h3 style="margin-top:0">Recent errors</h3><div id="errs"></div></div>
+    <div class="card"><h3 style="margin-top:0">Kalshi markets we could not match to a sportsbook game</h3><div id="unK"></div></div>
+    <div class="card"><h3 style="margin-top:0">Sportsbook games with no Kalshi market</h3><div id="unB"></div></div>
+  </section>
+
+  <section id="tab-settings" hidden>
+    <div class="card">
+      <div class="settings-grid" id="settingsGrid"></div>
+      <div style="margin-top:14px"><button class="primary" id="btnSave">Save settings</button></div>
+    </div>
+  </section>
+</main>
+
+<aside id="drawer"></aside>
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const api = async (path, opts) => {
+  const r = await fetch(path, opts && opts.body ? {method: opts.method || 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(opts.body)} : opts);
+  if (!r.ok) { let m = r.statusText; try { m = (await r.json()).detail || m; } catch (e) {} throw new Error(m); }
+  return r.json();
+};
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cents = (x, d = 1) => x == null ? '–' : (x * 100).toFixed(d) + '¢';
+const pct = (x, d = 1) => x == null ? '–' : (x * 100).toFixed(d) + '%';
+const money = x => x == null ? '–' : (x < 0 ? '-$' : '$') + Math.abs(x).toFixed(2);
+const cls = x => x == null ? '' : x > 0 ? 'pos' : x < 0 ? 'neg' : '';
+const dur = s => s == null ? '–' : s < 90 ? s + 's' : s < 5400 ? Math.round(s / 60) + 'm' : (s / 3600).toFixed(1) + 'h';
+const when = iso => { if (!iso) return '–'; const d = new Date(iso); return d.toLocaleString([], {weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}); };
+const kick = m => m == null ? '–' : m < 0 ? 'started' : m < 120 ? m + 'm' : (m / 60).toFixed(1) + 'h';
+function toast(msg, err) { const t = $('#toast'); t.textContent = msg; t.className = err ? 'err' : ''; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', 3200); }
+
+let PERF_MODE = 'all';
+let STATUS = null, OPPS = [], BOARD = [], SORT = {}, TAB = 'opps', SPORT = '';
+const multi = () => STATUS && STATUS.sports.length > 1;
+const sportTag = r => `<span class="tag">${esc((r.sport || 'nfl').toUpperCase())}</span>`;
+const withSport = cols => (!SPORT && multi()) ? [{h: 'Sport', k: 'sport', f: sportTag}, ...cols] : cols;
+const q = (extra) => SPORT ? (extra ? '&' : '?') + 'sport=' + SPORT : '';
+const inSport = rows => rows.filter(r => !SPORT || r.sport === SPORT);
+
+function flagTags(r) {
+  const block = new Set(['no fair price','no quotes','started','few books','stale book','wide spread','thin size','extreme price','start time differs','duplicate market','past expected length','stale quote']);
+  return (r.flags || []).map(f => `<span class="tag ${block.has(f) ? 'block' : 'warn'}">${esc(f)}</span>`).join('');
+}
+function sortRows(rows, key, defKey, defDir) {
+  const s = SORT[key] || {k: defKey, d: defDir};
+  if (!s.k) return rows;
+  return [...rows].sort((a, b) => { const x = a[s.k], y = b[s.k]; if (x == null) return 1; if (y == null) return -1; return (x > y ? 1 : x < y ? -1 : 0) * s.d; });
+}
+function renderTable(el, key, cols, rows, defKey, defDir, onRow, emptyMsg, rowClass) {
+  if (!rows.length) { el.innerHTML = `<tbody><tr><td class="empty">${emptyMsg}</td></tr></tbody>`; return; }
+  const s = SORT[key] || {k: defKey, d: defDir};
+  const head = cols.map(c => `<th class="${c.num ? 'num' : ''}" data-k="${c.k || ''}">${c.h}${c.k && s.k === c.k ? (s.d > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('');
+  const body = sortRows(rows, key, defKey, defDir).map((r, i) => `<tr class="row ${rowClass ? rowClass(r) : ''}" data-i="${i}">${cols.map(c => `<td class="${c.num ? 'num' : ''}">${c.f(r)}</td>`).join('')}</tr>`).join('');
+  el.innerHTML = `<thead><tr>${head}</tr></thead><tbody>${body}</tbody>`;
+  const sorted = sortRows(rows, key, defKey, defDir);
+  el.querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.k; if (!k) return; const cur = SORT[key] || {k: defKey, d: defDir}; SORT[key] = {k, d: cur.k === k ? -cur.d : -1}; renderAll(); });
+  if (onRow) el.querySelectorAll('tr.row').forEach(tr => tr.onclick = ev => { if (ev.target.tagName === 'BUTTON') return; onRow(sorted[+tr.dataset.i]); });
+}
+
+const sideTag = r => r.best_side ? `<span class="tag side-${r.best_side.toLowerCase()}">BUY ${r.best_side}</span>` : '–';
+const startCol = {h: 'Start', k: 'kickoff', f: r => esc(when(r.kickoff)) + (r.date_off_days ? ` <span class="tag warn" title="The Kalshi ticker is dated ${esc(r.event_date)}">Kalshi ${esc(r.event_date.slice(5))}</span>` : '')};
+const OPP_COLS = [
+  {h: 'Game', k: 'game', f: r => esc(r.game)},
+  startCol,
+  {h: 'Contract', k: 'label', f: r => esc(r.label) + (r.approx ? ' <span class="tag warn">≈</span>' : '')},
+  {h: 'Action', k: 'best_side', f: sideTag},
+  {h: 'Price', k: 'price', num: 1, f: r => cents(r.price)},
+  {h: 'All-in', k: 'all_in', num: 1, f: r => `<b>${cents(r.all_in)}</b>`},
+  {h: 'Book fair', k: 'fair_side', num: 1, f: r => pct(r.fair_side)},
+  {h: 'Net edge', k: 'net_edge', num: 1, f: r => `<b class="${cls(r.net_edge)}">${cents(r.net_edge)}</b>`},
+  {h: 'ROI', k: 'roi', num: 1, f: r => `<span class="${cls(r.roi)}">${pct(r.roi)}</span>`},
+  {h: 'Size @ price', k: 'qty', num: 1, f: r => r.qty ?? '–'},
+  {h: 'Maker bid', k: 'maker_limit', num: 1, f: r => r.maker_limit ? cents(r.maker_limit, 0) : '–'},
+  {h: 'Books', k: 'n_books', num: 1, f: r => r.n_books},
+  {h: 'Book age', k: 'book_age_secs', num: 1, f: r => dur(r.book_age_secs)},
+  {h: 'Kickoff in', k: 'mins_to_kickoff', num: 1, f: r => kick(r.mins_to_kickoff)},
+  {h: 'Flags', f: flagTags},
+];
+const BOARD_COLS = [
+  {h: 'Game', k: 'game', f: r => esc(r.game)},
+  startCol,
+  {h: 'Contract', k: 'label', f: r => esc(r.label) + (r.approx ? ' <span class="tag warn">≈</span>' : '')},
+  {h: 'Kalshi bid', k: 'yes_bid', num: 1, f: r => cents(r.yes_bid)},
+  {h: 'Kalshi ask', k: 'yes_ask', num: 1, f: r => cents(r.yes_ask)},
+  {h: 'Mid', k: 'mid', num: 1, f: r => cents(r.mid)},
+  {h: 'Book fair', k: 'fair_yes', num: 1, f: r => pct(r.fair_yes)},
+  {h: 'Gap (fair − mid)', k: 'gap', num: 1, f: r => `<b class="${cls(r.gap)}">${r.gap == null ? '–' : (r.gap > 0 ? '+' : '') + (r.gap * 100).toFixed(1) + ' pts'}</b>`},
+  {h: 'Best side', k: 'best_side', f: sideTag},
+  {h: 'Net edge', k: 'net_edge', num: 1, f: r => `<span class="${cls(r.net_edge)}">${cents(r.net_edge)}</span>`},
+  {h: 'Spread', k: 'spread', num: 1, f: r => cents(r.spread)},
+  {h: 'Volume', k: 'volume', num: 1, f: r => r.volume == null ? '–' : Math.round(r.volume).toLocaleString()},
+  {h: 'Flags', f: flagTags},
+];
+
+function renderOpps() {
+  const minE = (parseFloat($('#fMinEdge').value) || 0) / 100, kind = $('#fKind').value, approx = $('#fApprox').checked;
+  const rows = inSport(BOARD).filter(r => r.tradable && r.net_edge != null && r.net_edge >= minE && (!kind || r.kind === kind) && (approx || !r.approx));
+  $('#oppCount').textContent = `${rows.length} shown`;
+  renderTable($('#tblOpps'), 'opps', withSport(OPP_COLS), rows, 'net_edge', -1, openDrawer,
+    BOARD.length ? 'No contract clears your edge threshold right now. That is the normal state: most of the time Kalshi and the books agree.' : 'No data yet. Waiting for the first refresh…');
+}
+function renderBoard() { renderTable($('#tblBoard'), 'board', withSport(BOARD_COLS), inSport(BOARD), 'gap', -1, openDrawer, 'No matched markets yet. Check the Diagnostics tab.'); }
+
+function renderHeader() {
+  const s = STATUS; if (!s) return;
+  const m = $('#mode'); m.textContent = s.mode.toUpperCase(); m.className = 'badge ' + s.mode;
+  const b = $('#banner');
+  if (s.mode === 'demo') { b.style.display = 'block'; b.innerHTML = '<b>DEMO MODE:</b> every price you see is synthetic.' + (s.demo_reason ? ' <b>Why:</b> ' + esc(s.demo_reason) + '.' : '') + ' Fix it, then stop and restart the app.'; $('#btnDemoFinish').style.display = ''; }
+  else b.style.display = 'none';
+  $('#stKalshi').innerHTML = `Kalshi: <b>${s.kalshi_age == null ? 'not yet' : dur(s.kalshi_age) + ' ago'}</b>`;
+  const stale = s.book_age != null && s.book_age > s.settings.book_max_age_secs;
+  const bk = $('#stBook'); bk.className = 'stat' + (stale ? ' warn' : '');
+  bk.innerHTML = `Books: <b>${s.book_age == null ? 'not yet' : dur(s.book_age) + ' old'}</b>${s.sports.length > 1 ? ' (oldest sport)' : ''}`;
+  const rem = s.credits.remaining, low = rem != null && rem <= s.settings.credit_reserve * 2;
+  const cr = $('#stCredits'); cr.className = 'stat' + (low ? ' bad' : '');
+  cr.innerHTML = `Odds API credits: <b>${rem == null ? '–' : rem}</b> · today <b>${s.credits.spent_24h}/${s.credits.daily_cap}</b>`;
+  $('#stCounts').innerHTML = `${s.matched} matched · <b>${s.opportunities}</b> opportunities`;
+  $('#btnBook').disabled = !s.has_odds_key;
+  $('#liveDot').style.display = s.sports.some(x => x.live_games > 0) || s.live_on ? 'inline-block' : 'none';
+}
+
+async function renderPaper() {
+  const d = await api('/api/paper-trades' + q());
+  const cols = [
+    {h: 'Opened', k: 'ts', f: r => new Date(r.ts * 1000).toLocaleString([], {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'})},
+    {h: 'Game', k: 'game', f: r => esc(r.game)}, {h: 'Starts', k: 'kickoff', f: r => esc(when(r.kickoff))}, {h: 'Contract', k: 'label', f: r => esc(r.label)},
+    {h: 'Side', k: 'side', f: r => `<span class="tag side-${r.side.toLowerCase()}">${r.side}</span>${r.live ? ' <span class="tag warn">LIVE</span>' : ''}`},
+    {h: 'Price', k: 'price', num: 1, f: r => cents(r.price)}, {h: 'Qty', k: 'qty', num: 1, f: r => r.qty}, {h: 'Fee', k: 'fee', num: 1, f: r => money(r.fee)},
+    {h: 'Edge at entry', k: 'net_edge', num: 1, f: r => cents(r.net_edge)},
+    {h: 'Status', k: 'status', f: r => r.status === 'open' ? '<span class="tag warn">open</span>' : `<span class="tag">${esc(r.status)}${r.result ? ' · ' + esc(r.result) : ''}</span>`},
+    {h: 'P&L', k: 'pnl', num: 1, f: r => r.pnl == null ? '–' : `<b class="${cls(r.pnl)}">${money(r.pnl)}</b>`},
+    {h: '', f: r => `<button class="danger" data-del="${r.id}">✕</button>`},
+  ];
+  renderTable($('#tblTrades'), 'trades', withSport(cols), d.rows, 'ts', -1, null, 'No paper trades yet. Open an opportunity and press “Paper bet”.');
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await api('/api/paper-trades/' + b.dataset.del, {method: 'DELETE'}); renderPaper(); });
+}
+
+async function renderPerf() {
+  const lv = PERF_MODE === 'live' ? 'live=true' : PERF_MODE === 'pre' ? 'live=false' : '';
+  const p = await api('/api/performance' + q() + (lv ? (SPORT ? '&' : '?') + lv : '')), c = p.convergence;
+  const k = (l, v, s, c2) => `<div class="kpi"><div class="l">${l}</div><div class="v ${c2 || ''}">${v}</div><div class="s">${s || ''}</div></div>`;
+  $('#kpis').innerHTML =
+    k('Paper P&L', money(p.pnl), `${p.settled} settled · ${p.open} open`, cls(p.pnl)) +
+    k('ROI on staked', p.roi == null ? '–' : pct(p.roi), `staked ${money(p.staked)}`, cls(p.roi)) +
+    k('Record', `${p.wins}–${p.losses}`, 'wins–losses') +
+    k('Model-expected P&L', money(p.expected_pnl), 'what the edge estimates promised', cls(p.expected_pnl)) +
+    k('Signals tracked', c.signals, 'flagged ≥ min edge, with later prices') +
+    k('Kalshi moved toward books', c.pct_toward_book == null ? '–' : c.pct_toward_book.toFixed(0) + '%', c.avg_move_cents == null ? '' : `avg ${c.avg_move_cents.toFixed(2)}¢ after ≥10 min`, cls(c.avg_move_cents));
+  $('#convExplain').innerHTML = '<b>Does the thesis hold?</b> If Kalshi tends to drift <i>toward</i> the sportsbook price after we flag a gap (positive average move), the books really are leading and the strategy has legs. If the average move is ≈ 0 or negative, the gaps were noise or stale quotes. Judge this before trusting P&amp;L: it needs far fewer samples to show up.';
+  const cols = [...(!SPORT && multi() ? [{h: 'Sport', f: sportTag}] : []), {h: 'Game', f: r => esc(r.game)}, {h: 'Contract', f: r => esc(r.label)}, {h: 'Side', f: r => esc(r.side)},
+    {h: 'Edge at flag', num: 1, f: r => cents(r.entry_edge)}, {h: 'Kalshi move', num: 1, f: r => `<b class="${cls(r.move)}">${(r.move * 100 > 0 ? '+' : '') + (r.move * 100).toFixed(1)}¢</b>`}, {h: 'Hours later', num: 1, f: r => r.hours_later.toFixed(1)}];
+  renderTable($('#tblConv'), 'conv', cols, c.detail, null, 1, null, 'No tracked signals yet. Leave the app running while games approach: snapshots are saved automatically.');
+}
+
+async function renderDiag() {
+  const d = await api('/api/diagnostics');
+  const list = (rows, f, none) => rows.length ? `<table>${rows.map(r => `<tr><td>${f(r)}</td></tr>`).join('')}</table>` : `<span class="muted">${none}</span>`;
+  $('#errs').innerHTML = list(d.errors, e => `<span class="muted">${new Date(e.ts * 1000).toLocaleTimeString()}</span> ${esc(e.msg)}`, 'No errors.');
+  $('#unK').innerHTML = list(d.unmatched_kalshi, r => `${r.sport ? sportTag(r) + ' ' : ''}<code>${esc(r.ticker)}</code> ${esc(r.title || '')} <span class="muted">— ${esc(r.reason)}</span>`, 'Everything matched. (Markets for games the books do not list yet will show here.)');
+  $('#unB').innerHTML = list(d.unmatched_books, r => `${r.sport ? sportTag(r) + ' ' : ''}${esc(r.game)} <span class="muted">${esc(r.kickoff)}</span>`, 'None.');
+}
+
+const SETTING_FIELDS = [
+  ['min_net_edge', 'Min net edge (¢)', 100, 'Edge after fees needed to call it an opportunity'], ['max_contracts', 'Fee-sizing contracts', 1, 'Order size used to estimate fees'],
+  ['min_size', 'Min contracts at best price', 1, 'Skip thin quotes'], ['max_spread', 'Max bid/ask spread (¢)', 100, 'Wider quotes are not trusted'],
+  ['min_books', 'Min sportsbooks', 1, 'Books needed for a fair price'], ['book_max_age_secs', 'Stale book after (min)', 1 / 60, 'Older book snapshots are blocked'],
+  ['book_interval_secs', 'Poll every (min) when a game is "hot"', 1 / 60, 'Hot = next start within the hours below'], ['book_hot_hours', 'Hot window (h before start)', 1, 'Fresher data when it matters'],
+  ['book_warm_interval_secs', 'Poll every (min) when "warm"', 1 / 60, 'Next start beyond hot window'], ['book_window_hours', 'Never poll beyond (h)', 1, 'Far-out lines are noise: no credits spent'],
+  ['daily_credit_cap', 'Daily credit cap (all sports)', 1, 'Hard stop per rolling 24h. 500/month free ≈ 16/day'], ['credit_reserve', 'Keep credit reserve', 1, 'Never spend the last N credits'], ['pinnacle_weight', 'Pinnacle weight', 1, 'Sharpest book counts more'],
+  ['live_book_secs', 'LIVE: sportsbooks every (s)', 1, 'Costs 1 credit per call per sport. Minimum 10'], ['live_kalshi_secs', 'LIVE: Kalshi every (s)', 1, 'Free'],
+  ['live_budget', 'LIVE: session credit budget', 1, 'Sportsbook polling pauses when used up'], ['live_min_net_edge', 'LIVE: min net edge (¢)', 100, 'Bigger bar than pregame'],
+  ['live_max_spread', 'LIVE: max spread (¢)', 100, ''], ['live_book_max_age_secs', 'LIVE: ignore book quotes older than (s)', 1, 'Suspended / not-updating books'],
+  ['bankroll', 'Paper bankroll ($)', 1, 'For Kelly stake sizing'], ['kelly_fraction', 'Kelly fraction', 1, '0.25 = quarter Kelly'],
+  ['max_stake_pct', 'Max stake (% of bankroll)', 100, ''],
+];
+function renderSettings() {
+  const s = STATUS.settings;
+  $('#settingsGrid').innerHTML = SETTING_FIELDS.map(([k, label, mult, hint]) => `<label>${label}<input type="number" step="any" data-k="${k}" data-m="${mult}" value="${+(s[k] * mult).toFixed(4)}"><small>${hint}</small></label>`).join('') +
+    `<label>De-vig method<select data-k="devig_method"><option ${s.devig_method === 'power' ? 'selected' : ''}>power</option><option ${s.devig_method === 'proportional' ? 'selected' : ''}>proportional</option></select><small>How the bookmaker margin is removed</small></label>` +
+    `<label><span>Approximate lines</span><input type="checkbox" data-k="allow_approx" ${s.allow_approx ? 'checked' : ''}><small>Allow Kalshi strikes that differ slightly from the book line (spreads/totals)</small></label>`;
+}
+$('#btnSave').onclick = async () => {
+  const patch = {};
+  document.querySelectorAll('#settingsGrid [data-k]').forEach(el => { const k = el.dataset.k; patch[k] = el.type === 'checkbox' ? el.checked : el.tagName === 'SELECT' ? el.value : parseFloat(el.value) / parseFloat(el.dataset.m); });
+  try { await api('/api/settings', {body: patch}); toast('Settings saved'); await refresh(); } catch (e) { toast(e.message, true); }
+};
+
+// ── drawer ──
+async function openDrawer(r) {
+  const d = $('#drawer'); d.classList.add('open');
+  const rowsHtml = [
+    ['Kalshi bid / ask', `${cents(r.yes_bid)} / ${cents(r.yes_ask)}`], ['Book fair (YES)', pct(r.fair_yes)], ['Books used', `${r.n_books} (${esc((r.books || []).join(', '))})`],
+    ['Book disagreement (σ)', r.dispersion == null ? '–' : (r.dispersion * 100).toFixed(2) + ' pts'], ['Book snapshot age', dur(r.book_age_secs)],
+    ['Best side', r.best_side ? `${r.best_side} @ ${cents(r.price)}` : '–'], ['Fee per contract', cents(r.fee_per, 2)], ['<b>All-in per contract</b>', `<b>${cents(r.all_in)}</b> <span class="muted">(at ${r.qty ?? '–'} contracts)</span>`], ['Gross edge', cents(r.gross_edge)],
+    ['<b>Net edge</b>', `<b class="${cls(r.net_edge)}">${cents(r.net_edge)}</b>`], ['ROI', pct(r.roi)], ['Kelly-suggested contracts', r.kelly_qty ?? '–'],
+    ['Resting bid (no taker fee if filled)', r.maker_limit ? `${cents(r.maker_limit, 0)} → edge ${cents(r.maker_edge)} <span class="muted">(may not fill)</span>` : '–'], ['Starts', `${esc(when(r.kickoff))} <span class="muted">(in ${kick(r.mins_to_kickoff)})</span>`], ['Kalshi event date', r.event_date ? esc(r.event_date) : '–'],
+  ].map(([a, b]) => `<span>${a}</span><span>${b}</span>`).join('');
+  d.innerHTML = `<div style="display:flex;justify-content:space-between"><div><h2>${esc(r.label)}</h2><div class="muted">${sportTag(r)} ${esc(r.game)} · <code>${esc(r.ticker)}</code></div></div><button id="dClose">✕</button></div>
+    <div style="margin:10px 0">${flagTags(r) || '<span class="muted">no warnings</span>'}</div>${r.note ? `<div class="muted" style="font-size:12px">${esc(r.note)}</div>` : ''}
+    <div class="kv">${rowsHtml}</div>
+    <div id="spark"></div>
+    <div class="card" style="margin-top:14px"><b>Live order cost</b> <span class="muted" style="font-size:12px">reads Kalshi's real order book (free)</span>
+      <div class="toolbar" style="margin:10px 0 6px"><select id="qSide"><option ${r.best_side === 'YES' ? 'selected' : ''}>YES</option><option ${r.best_side === 'NO' ? 'selected' : ''}>NO</option></select>
+        <label>Contracts <input id="qQty" type="number" min="1" value="${Math.max(1, Math.min(r.qty || 20, 100))}"></label><button id="qGo">Get live quote</button></div>
+      <div id="qOut" class="muted" style="font-size:12.5px">Enter a size to see the average price you would really pay, fee included.</div></div>
+    <div class="card" style="margin-top:14px"><b>Paper bet</b><div class="toolbar" style="margin:10px 0 0">
+      <select id="pbSide"><option ${r.best_side === 'YES' ? 'selected' : ''}>YES</option><option ${r.best_side === 'NO' ? 'selected' : ''}>NO</option></select>
+      <label>Contracts <input id="pbQty" type="number" min="1" value="${Math.max(1, Math.min(r.qty || 10, r.kelly_qty || 10))}"></label>
+      <button class="primary" id="pbGo">Record paper bet</button></div></div>`;
+  $('#dClose').onclick = () => d.classList.remove('open');
+  $('#qGo').onclick = async () => {
+    const out = $('#qOut'); out.textContent = 'Reading the order book…';
+    try {
+      const q = await api(`/api/quote?ticker=${encodeURIComponent(r.ticker)}&side=${$('#qSide').value}&qty=${parseInt($('#qQty').value) || 1}`);
+      const line = (a, b) => `<div style="display:flex;justify-content:space-between"><span class="muted">${a}</span><span>${b}</span></div>`;
+      out.innerHTML = (q.complete ? '' : `<div class="neg" style="margin-bottom:6px"><b>Only ${q.filled} of ${q.requested} contracts are available</b> in the book: the rest would not fill.</div>`) +
+        line('Average price', `<b>${cents(q.avg_price)}</b>`) + line('Best ask → worst level used', `${cents(q.best)} → ${cents(q.worst)}`) +
+        line('Slippage vs the board price', `<span class="${q.slippage > 0.0005 ? 'neg' : ''}">${q.slippage == null ? '–' : (q.slippage * 100 >= 0 ? '+' : '') + (q.slippage * 100).toFixed(1) + '¢'}</span>`) +
+        line('Fee (estimated)', `${money(q.fee)} <span class="muted">(${cents(q.filled ? q.fee / q.filled : null, 2)} each)</span>`) +
+        line('<b>All-in per contract</b>', `<b>${cents(q.all_in_per)}</b>`) + line('<b>Total you pay</b>', `<b>${money(q.all_in_total)}</b>`) +
+        line('Book fair price of this side', pct(q.fair_side)) + line('<b>Edge after all costs</b>', `<b class="${cls(q.edge_all_in)}">${cents(q.edge_all_in)}</b>`) +
+        `<div class="muted" style="margin-top:6px">Depth (cheapest first): ${q.levels.slice(0, 5).map(l => `${l.qty}@${cents(l.price, 0)}`).join(' · ')}</div>`;
+    } catch (e) { out.innerHTML = `<span class="neg">${esc(e.message)}</span>`; }
+  };
+  $('#pbGo').onclick = async () => {
+    try { const t = await api('/api/paper-trades', {body: {ticker: r.ticker, side: $('#pbSide').value, qty: parseInt($('#pbQty').value) || 1}}); toast(`Recorded: ${$('#pbSide').value} ×${t.qty} @ ${cents(t.price)} (fee ${money(t.fee)})`); }
+    catch (e) { toast(e.message, true); }
+  };
+  try { const h = (await api('/api/history/' + encodeURIComponent(r.ticker))).rows; $('#spark').innerHTML = spark(h); } catch (e) {}
+}
+function spark(h) {
+  if (h.length < 2) return '<div class="muted" style="font-size:12px">Price history appears here after a few minutes of collecting.</div>';
+  const W = 400, H = 110, P = 8, t0 = h[0].ts, t1 = h[h.length - 1].ts || t0 + 1;
+  const mids = h.map(x => x.yes_bid != null && x.yes_ask != null ? (x.yes_bid + x.yes_ask) / 2 : null), fair = h.map(x => x.fair_yes);
+  const all = [...mids, ...fair].filter(v => v != null), lo = Math.min(...all) - 0.01, hi = Math.max(...all) + 0.01;
+  const X = t => P + (W - 2 * P) * (t - t0) / ((t1 - t0) || 1), Y = v => H - P - (H - 2 * P) * (v - lo) / ((hi - lo) || 1);
+  const path = arr => arr.map((v, i) => v == null ? '' : `${arr.slice(0, i).some(u => u != null) ? 'L' : 'M'}${X(h[i].ts).toFixed(1)},${Y(v).toFixed(1)}`).join('');
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${path(fair)}" fill="none" stroke="#58a6ff" stroke-width="2"/><path d="${path(mids)}" fill="none" stroke="#3fb950" stroke-width="2"/></svg>
+    <div class="legend"><span><i class="dot" style="background:#58a6ff"></i>Book fair</span><span><i class="dot" style="background:#3fb950"></i>Kalshi mid</span><span>${(lo * 100).toFixed(0)}–${(hi * 100).toFixed(0)}%</span></div>`;
+}
+
+// ── live tab ──
+let LIVE = {rows: [], status: null}, LIVE_SEEN = new Set(), LIVE_FIRST = true;
+const mv = x => x == null ? '<span class="muted">–</span>' : `<b class="${cls(x)}">${(x * 100 > 0 ? '+' : '') + (x * 100).toFixed(1)}¢</b>`;
+const secs = s => s == null ? '–' : Math.round(s) + 's';
+const LIVE_COLS = [
+  {h: 'Game', k: 'game', f: r => esc(r.game)}, {h: 'Contract', k: 'label', f: r => esc(r.label)},
+  {h: 'Kalshi bid', k: 'yes_bid', num: 1, f: r => cents(r.yes_bid)}, {h: 'Kalshi ask', k: 'yes_ask', num: 1, f: r => cents(r.yes_ask)},
+  {h: 'Book fair', k: 'fair_yes', num: 1, f: r => pct(r.fair_yes)},
+  {h: 'Gap', k: 'gap', num: 1, f: r => `<b class="${cls(r.gap)}">${r.gap == null ? '–' : (r.gap > 0 ? '+' : '') + (r.gap * 100).toFixed(1) + ' pts'}</b>`},
+  {h: 'Action', k: 'best_side', f: sideTag}, {h: 'All-in', k: 'all_in', num: 1, f: r => r.all_in == null ? '–' : cents(r.all_in)},
+  {h: 'Net edge', k: 'net_edge', num: 1, f: r => `<b class="${cls(r.net_edge)}">${cents(r.net_edge)}</b>`},
+  {h: 'Moved 30s', k: 'move_30s', num: 1, f: r => mv(r.move_30s)}, {h: 'Moved 2m', k: 'move_120s', num: 1, f: r => mv(r.move_120s)},
+  {h: 'Book age', k: 'book_age_secs', num: 1, f: r => `<span class="${r.book_age_secs > 75 ? 'neg' : ''}">${secs(r.book_age_secs)}</span>`},
+  {h: 'Kalshi age', k: 'kalshi_age', num: 1, f: r => `<span class="${r.kalshi_age > 10 ? 'neg' : ''}">${secs(r.kalshi_age)}</span>`},
+  {h: 'Flags', f: flagTags},
+];
+async function refreshLive() {
+  try { LIVE = await api('/api/live/board' + q()); renderLive(); } catch (e) { /* the 5 s status poll reports connectivity problems */ }
+}
+function renderLive() {
+  const s = LIVE.status; if (!s) return;
+  const ctl = $('#liveCtl'), msg = $('#liveMsg');
+  const left = Math.max(0, s.budget - s.spent), perHr = s.est_credits_per_hour;
+  const liveNames = s.sports.filter(x => x.live_games > 0);
+  ctl.innerHTML = `<div class="livebar">
+      <button class="switch ${s.enabled ? 'on' : 'primary'}" id="liveSwitch">${s.enabled ? '■ Stop live mode' : '▶ Start live mode'}</button>
+      <span class="big">${s.enabled ? '<span style="color:var(--red)">● LIVE</span>' : 'Live mode is OFF'}</span>
+      <span class="stat">Sportsbooks every <b>${s.settings.live_book_secs}s</b> · Kalshi every <b>${s.settings.live_kalshi_secs}s</b></span>
+      <span class="stat">Session credits <b>${s.spent}/${s.budget}</b>${s.enabled && perHr ? ` · now costing ~<b>${perHr}</b>/hour` : ''}</span>
+      <span class="stat">Credits left this month <b>${s.credits_remaining ?? '–'}</b></span></div>
+    <div class="stat" style="margin-top:8px">${liveNames.length ? liveNames.map(x => `<span class="tag">${esc(x.name)}: ${x.live_games} in progress</span>`).join(' ') : 'No games in progress right now.'}</div>`;
+  $('#liveSwitch').onclick = toggleLive;
+  const boxes = [];
+  if (!s.enabled) boxes.push(`<div class="warnbox"><b>What this does.</b> While ON, Kalshi is refreshed every few seconds (free) and sportsbook odds on a timer that <b>costs credits</b>: ~${Math.round(3600 / s.settings.live_book_secs)} per hour <i>per sport with a game on</i>. It compares Kalshi only against <b>fresh in-game</b> book prices (books that stop updating are ignored) and demands a bigger edge (${(s.settings.live_min_net_edge * 100).toFixed(0)}¢) than pregame. It starts OFF every time you launch the app, and pauses itself when the session budget runs out.</div>`);
+  if (s.enabled && s.paused_reason) boxes.push(`<div class="badbox"><b>Sportsbook polling paused:</b> ${esc(s.paused_reason)}. Kalshi keeps updating, but without fresh book prices nothing here can be called an opportunity. Raise the budget in Settings and press Start again to resume.</div>`);
+  if (s.enabled && !s.paused_reason && !liveNames.length) boxes.push('<div class="warnbox">Waiting for a game to start. Polling begins ' + (STATUS ? STATUS.settings.live_prewarm_min : 5) + ' minutes before kickoff, so no credits are spent until then.</div>');
+  if (s.enabled && liveNames.length && !s.paused_reason && s.sports.every(x => x.book_age == null || x.book_age > 90)) boxes.push('<div class="badbox"><b>Sportsbook data is not fresh</b> (older than 90 s) or no book is quoting these games in-play. Nothing below should be traded against.</div>');
+  boxes.push('<div class="warnbox" style="background:#16263f;border-color:#2a4a7f;color:#b6d4ff"><b>Read this before trading live.</b> Both prices move on the same events. A "gap" can simply mean the sportsbook repriced first, or that your sportsbook number is already ' + s.settings.live_book_secs + ' s old. Check the <b>age columns</b>, the <b>Moved</b> columns (a big recent jump toward the book usually means the gap is already closing), and use <b>Live order cost</b> in the row details: the quote you see is for a few contracts.</div>');
+  msg.innerHTML = boxes.join('');
+  const opps = new Set(LIVE.rows.filter(r => r.opportunity).map(r => r.ticker));
+  const flashing = LIVE_FIRST ? new Set() : new Set([...opps].filter(t => !LIVE_SEEN.has(t)));
+  LIVE_SEEN = opps; LIVE_FIRST = false;
+  renderTable($('#tblLive'), 'live', withSport(LIVE_COLS), inSport(LIVE.rows), 'net_edge', -1, openDrawer,
+    s.enabled ? 'No contract matched to a game in progress yet.' : 'Turn live mode on to see games in progress.', r => flashing.has(r.ticker) ? 'flash' : '');
+}
+async function toggleLive() {
+  const s = LIVE.status;
+  if (!s.enabled) {
+    const sports = s.live_sports.length || 1;
+    if (!confirm(`Start live mode?\n\nSportsbooks will be polled every ${s.settings.live_book_secs}s for each sport with a game on (about ${s.est_credits_per_hour || Math.round(3600 / s.settings.live_book_secs)} credits/hour right now).\nSession budget: ${s.settings.live_budget} credits. You have ${s.credits_remaining ?? '?'} credits left this month.\n\nIt pauses sportsbook polling by itself when the budget is used.`)) return;
+  }
+  try { await api('/api/live', {body: {enabled: !s.enabled, budget: s.enabled ? null : s.settings.live_budget}}); LIVE_FIRST = true; await refreshLive(); await refresh(); toast(s.enabled ? 'Live mode stopped' : 'Live mode started'); }
+  catch (e) { toast(e.message, true); }
+}
+const $$ = s => [...document.querySelectorAll(s)];
+
+// ── wiring ──
+function renderSportBar() {
+  const bar = $('#sportbar'); if (!STATUS || STATUS.sports.length < 2) { bar.innerHTML = ''; return; }
+  const chip = (key, name, n, tip) => `<span class="chip ${SPORT === key ? 'active' : ''}" data-s="${key}" title="${esc(tip || '')}">${name}${n ? `<span class="n">${n}</span>` : ''}</span>`;
+  bar.innerHTML = chip('', 'All sports', STATUS.opportunities) + STATUS.sports.map(s =>
+    chip(s.key, s.name, s.opportunities, `${s.games} book games · ${s.matched} matched` + (s.next_kickoff_hours != null ? ` · next start in ${s.next_kickoff_hours}h` : ' · nothing scheduled') + (s.loaded ? '' : ' · not loaded yet'))).join('');
+  bar.querySelectorAll('.chip').forEach(c => c.onclick = () => { SPORT = c.dataset.s; renderAll(); if (TAB === 'live') refreshLive(); if (TAB === 'paper') renderPaper(); if (TAB === 'perf') renderPerf(); });
+}
+function renderAll() { renderHeader(); renderSportBar(); renderOpps(); renderBoard(); }
+async function refresh() {
+  try {
+    [STATUS, BOARD] = await Promise.all([api('/api/status'), api('/api/board').then(d => d.rows)]);
+    renderAll();
+    if (TAB === 'settings' && !document.activeElement.closest('#settingsGrid')) renderSettings();
+  } catch (e) { toast('Server unreachable: ' + e.message, true); }
+}
+function showTab(t) {
+  TAB = t;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+  ['opps', 'live', 'board', 'paper', 'perf', 'diag', 'settings'].forEach(x => $('#tab-' + x).hidden = x !== t);
+  if (t === 'live') refreshLive(); if (t === 'paper') renderPaper(); if (t === 'perf') renderPerf(); if (t === 'diag') renderDiag(); if (t === 'settings' && STATUS) renderSettings();
+}
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+['fMinEdge', 'fKind', 'fApprox'].forEach(id => $('#' + id).addEventListener('input', renderOpps));
+async function doRefresh(src, btn) {
+  btn.disabled = true;
+  try { await api('/api/refresh', {body: {source: src, sport: SPORT || null}}); await refresh(); toast('Refreshed'); } catch (e) { toast(e.message, true); }
+  btn.disabled = !STATUS || (src === 'book' && !STATUS.has_odds_key);
+}
+$('#btnKalshi').onclick = e => doRefresh('kalshi', e.target);
+$('#btnBook').onclick = e => { const n = SPORT ? 1 : (STATUS ? STATUS.sports.length : 1); if (confirm(`Fetch fresh sportsbook odds for ${SPORT ? SPORT.toUpperCase() : n + ' sport(s)'}? This spends about ${n} Odds API credit(s). Manual refreshes ignore the daily cap.`)) doRefresh('book', e.target); };
+$('#btnSettle').onclick = async () => { try { const r = await api('/api/settle', {body: {}}); toast(`${r.settled} trade(s) settled`); renderPaper(); } catch (e) { toast(e.message, true); } };
+$('#btnDemoFinish').onclick = async () => { try { const r = await api('/api/demo/finish-games', {body: {}}); toast(`Demo games finished, ${r.settled} trade(s) settled`); renderPaper(); } catch (e) { toast(e.message, true); } };
+$('#perfMode').onchange = e => { PERF_MODE = e.target.value; renderPerf(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#drawer').classList.remove('open'); });
+refresh(); setInterval(() => { if (!document.hidden && TAB === 'live') refreshLive(); }, 2000);
+setInterval(() => { if (!document.hidden) { refresh(); if (TAB === 'paper') renderPaper(); if (TAB === 'perf') renderPerf(); } }, 5000);
+</script>
+</body>
+</html>
